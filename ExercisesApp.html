@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyGymRoutine PWA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configurazione di Tailwind per usare il font Inter (se disponibile) e colori personalizzati
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Arial', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': '#4f46e5', // Indaco
+                        'secondary': '#f97316', // Arancio
+                        'background': '#f1f5f9', // Grigio chiaro
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base Styling for the App/PWA Look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        /* Definisce le "viste" (schermate) */
+        .view {
+            min-height: 100vh;
+            display: none; /* Nasconde tutte le viste per default */
+            animation: fadeIn 0.3s ease-out;
+        }
+        .view.active {
+            display: block; /* Mostra solo la vista attiva */
+        }
+
+        /* Animazione di transizione per un look più 'app' */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Stili specifici per l'interfaccia - ora includono il tag <video> */
+        #media-container iframe,
+        #media-container video, 
+        #media-container img {
+            width: 100%;
+            height: 25rem; /* Altezza fissa per i media */
+            max-height: 25rem;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <div id="view-home" class="view active p-4 md:p-8">
+        <h1 class="text-3xl font-extrabold mb-6 text-primary border-b-2 border-primary pb-2">La Tua Scheda di Allenamento</h1>
+        <div id="schede-list" class="space-y-4">
+            </div>
+    </div>
+
+    <div id="view-scheda" class="view p-4 md:p-8">
+        <button onclick="navigateHome()" class="text-primary font-semibold text-lg flex items-center mb-6 focus:outline-none">
+            <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Indietro
+        </button>
+        <h2 id="scheda-nome" class="text-3xl font-bold mb-2"></h2>
+        <p id="scheda-descrizione" class="text-gray-600 mb-6 border-b pb-4"></p>
+        
+        <div id="blocchi-container" class="space-y-6">
+            </div>
+    </div>
+
+    <div id="view-esercizio" class="view p-4 md:p-8">
+        <button onclick="navigateBackToScheda()" class="text-primary font-semibold text-lg flex items-center mb-6 focus:outline-none">
+            <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Scheda
+        </button>
+        <h2 id="esercizio-nome" class="text-3xl font-bold mb-4"></h2>
+        
+        <div id="media-container" class="bg-gray-200 rounded-xl overflow-hidden shadow-lg mb-6">
+            </div>
+        
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <div class="p-3 bg-secondary/20 rounded-lg shadow-sm">
+                <p class="text-sm font-semibold text-gray-700">Serie:</p>
+                <p class="text-xl font-bold text-secondary" id="esercizio-serie"></p>
+            </div>
+            <div class="p-3 bg-secondary/20 rounded-lg shadow-sm">
+                <p class="text-sm font-semibold text-gray-700">Ripetizioni:</p>
+                <p class="text-xl font-bold text-secondary" id="esercizio-ripetizioni"></p>
+            </div>
+        </div>
+        
+        <h3 class="text-xl font-semibold mb-2 mt-4 border-b pb-1">Istruzioni:</h3>
+        <p id="esercizio-descrizione" class="text-gray-700 leading-relaxed"></p>
+    </div>
+
+    <script>
+        // Funzione per generare URL di placeholder per immagini
+        const placeholderImg = (text) => `https://placehold.co/600x400/374151/ffffff?text=${encodeURIComponent(text)}`;
+        
+        // La funzione getYoutubeEmbedUrl è stata rimossa, ora la logica di visualizzazione 
+        // è implementata direttamente in showEsercizioDetail.
+
+        const schedeAllenamento = [
+            {
+                id: 'scheda_stigg',
+                nome: "Scheda Split 4 Giorni",
+                descrizione: "Routine di allenamento suddivisa in 4 giorni a settimana.",
+                blocchi: [
+                    // GIORNO 1: DORSALI
+                    {
+                        titolo: "Giorno 1: DORSALI",
+                        esercizi: [
+                            { 
+                                nome: "LAT MACHINE", 
+                                serie: 3, 
+                                ripetizioni: "8", 
+                                immagine: placeholderImg('LAT MACHINE'), 
+                                video: "https://gymvisual.com/img/vid/00000/01501201-cable-bar-lateral-pulldown-back-view.mp4", 
+                                descrizione: "Tirare la sbarra verso il petto superiore, concentrandosi sulla contrazione dei dorsali. Mantenere il busto leggermente inclinato all'indietro." 
+                            },
+                            { 
+                                nome: "PULLEY", 
+                                serie: 3, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('PULLEY'), 
+                                video: "https://gymvisual.com/img/vid/00000/08611201-cable-seated-row-back-fix-view.mp4", 
+                                descrizione: "Tirare la maniglia verso l'addome, tenendo la schiena dritta. Concentrarsi sulla retrazione delle scapole. Il busto va bloccato, evitando basculamenti." 
+                            },
+                            { 
+                                nome: "ROW MACHINE (Vertical Row)", 
+                                serie: 3, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('ROW MACHINE'), 
+                                video: "https://gymvisual.com/img/vid/01000/13501201-lever-seated-row-back-view.mp4",
+                                descrizione: "Tirare l'impugnatura verso il petto, spingendo i gomiti all'indietro. Eseguire un movimento completo di scapole, evitando mezze ripetizioni." 
+                            },
+                            { 
+                                nome: "LAT MACHINE PRESA STRETTA", 
+                                serie: 3, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('LAT STRETTA'), 
+                                video: "https://gymvisual.com/img/vid/01000/10471201-cable-close-grip-front-lat-pulldown-back-view.mp4", 
+                                descrizione: "Utilizzare una presa stretta prona (larghezza spalle) per enfatizzare la parte centrale dei dorsali. L'obiettivo è portare i gomiti verso i fianchi, tirando la sbarra verso il torace superiore." 
+                            }
+                        ]
+                    },
+                    // GIORNO 2: PETTORALI
+                    {
+                        titolo: "Giorno 2: PETTORALI",
+                        esercizi: [
+                            { 
+                                nome: "PANCA MULTIPOWER", 
+                                serie: 3, 
+                                ripetizioni: "8", 
+                                immagine: placeholderImg('PANCA MULTIPOWER'), 
+                                video: "https://gymvisual.com/img/vid/00000/07481201-smith-bench-press-chest-fix-view.mp4", 
+                                descrizione: "Posizionare la panca in modo che gli occhi siano sotto la barra. Afferrare con presa prona leggermente più larga delle spalle. Scendere al petto inspirando e spingere espirando. Mantenere l'arco lombare e i piedi saldi." 
+                            },
+                            { 
+                                nome: "CHEST PRESS DISCHI MONO", 
+                                serie: 3, 
+                                ripetizioni: "10+10", 
+                                immagine: placeholderImg('CHEST PRESS MONO'), 
+                                // CAMBIATO: URL GIF di esempio
+                                video: "https://gymvisual.com/img/vid/01000/12991201-lever-incline-chest-press-chest-fix2-view.mp4", 
+                                descrizione: "Macchina a spinta (chest press). Mantenere il petto aperto, le spalle basse e l'arco lombare. Assicurarsi che l'avambraccio sia allineato con la traiettoria della spinta." 
+                            },
+                            { 
+                                nome: "CROCI CAVI", 
+                                serie: 3, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('CROCI CAVI'), 
+                                video: "https://gymvisual.com/img/vid/00000/01881201-cable-middle-fly-chest-fix-view.mp4", 
+                                descrizione: "Cavi all'altezza delle spalle (o variate per alta/bassa). Portare il busto leggermente in avanti, core attivo. Aprire lentamente le braccia mantenendo i gomiti leggermente flessi e chiudere incrociando per una contrazione massima." 
+                            },
+                            { 
+                                nome: "CROCI CAVI/MANUBRI SEDUTO", 
+                                serie: 3, 
+                                ripetizioni: "10+10", 
+                                immagine: placeholderImg('CROCI SEDUTO'), 
+                                video: "https://gymvisual.com/img/vid/00000/01711201-cable-incline-fly-chest-fix-view.mp4", 
+                                descrizione: "Eseguire le croci da seduto con inclinazione (ad esempio 30 gradi) per un focus specifico sulla parte alta del pettorale (usando i manubri) o sui cavi bassi." 
+                            }
+                        ]
+                    },
+                    // GIORNO 3: GAMBE
+                    {
+                        titolo: "Giorno 3: GAMBE",
+                        esercizi: [
+                            { 
+                                nome: "LEG EXTENSION", 
+                                serie: 3, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('LEG EXTENSION'), 
+                                video: "https://gymvisual.com/img/vid/03000/33861201-lever-seated-leg-extension-version-2-thighs-view.mp4", 
+                                descrizione: "Regolare la macchina in modo che il ginocchio sia in linea con il perno di rotazione. Estendere completamente, contraendo il quadricipite in cima. Movimento lento e controllato, evitando il blocco articolare a fine estensione." 
+                            },
+                            { 
+                                nome: "SQUAT SMITH", 
+                                serie: 3, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('SQUAT SMITH'), 
+                                video: "https://gymvisual.com/img/vid/03000/32811201-smith-full-squat-thighs-view.mp4", 
+                                descrizione: "Petto in fuori, addominali e glutei contratti. Scendere lentamente, distribuendo il peso su tutto il piede. Assicurarsi che le ginocchia non rientrino (valgismo)." 
+                            },
+                            { 
+                                nome: "LEG CURL", 
+                                serie: 3, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('LEG CURL'), 
+                                video: "https://gymvisual.com/img/vid/00000/05991201-lever-seated-leg-curl-thighs-fix-view.mp4", 
+                                descrizione: "Flessione della gamba (avvicinare i talloni ai glutei) in modo lento e controllato. Mantenere l'anca ben aderente al supporto della macchina." 
+                            },
+                            { 
+                                nome: "CALF IN PIEDI CON MANUBRI", 
+                                serie: 3, 
+                                ripetizioni: "12+12", 
+                                immagine: placeholderImg('CALF MANUBRI'), 
+                                video: "https://gymvisual.com/img/vid/00000/04171201-dumbbell-standing-calf-raise-calves-fix-view.mp4", 
+                                descrizione: "Alzate sui polpacci tenendo un manubrio per mano. Utilizzare un rialzo per estendere il range di movimento. Massima salita in punta e massima discesa controllata." 
+                            }
+                        ]
+                    },
+                    // GIORNO 4: SPALLE, TRICIPITI E BICIPITI
+                    {
+                        titolo: "Giorno 4: SPALLE, TRICIPITI & BICIPITI",
+                        esercizi: [
+                            { 
+                                nome: "ALZATE LATERALI MANUBRI", 
+                                serie: 3, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('ALZATE LATERALI'), 
+                                video: "https://gymvisual.com/img/vid/00000/03341201-dumbbell-lateral-raise-shoulder-fix-view.mp4", 
+                                descrizione: "Alzare i manubri lateralmente fino all'altezza delle spalle (massimo altezza clavicola). Braccia leggermente avanti (sul piano scapolare). Evitare di alzare le spalle (trapezio)." 
+                            },
+                            { 
+                                nome: "ALZATE LATERALI MACCHINA", 
+                                serie: 3, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('ALZATE MACCHINA'), 
+                                video: "https://gymvisual.com/img/vid/00000/05841201-lever-lateral-raise-shoulder-view.mp4", 
+                                descrizione: "Utilizzare la macchina per isolare i deltoidi laterali. Focus sul picco di contrazione e movimento controllato in eccentrica." 
+                            },
+                            { 
+                                nome: "APERTURE POSTERIORI CAVI (Facepull)", 
+                                serie: 2, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('APERTURE POSTERIORI'), 
+                                video: "https://gymvisual.com/img/vid/05000/56561201-cable-standing-face-pull-with-rope-shoulders-view.mp4", 
+                                descrizione: "Tirare i cavi all'indietro (o la corda verso la fronte, Facepull) tenendo le spalle basse. Concentrarsi sulla retrazione delle scapole e sulla contrazione dei deltoidi posteriori." 
+                            },
+                            { 
+                                nome: "REAR DELT MACHINE (Pec Deck al contrario)", 
+                                serie: 2, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('REAR DELT MACHINE'), 
+                                video: "https://gymvisual.com/img/vid/08000/89901201-lever-side-seated-single-arm-rear-delt-fly-male-view.mp4", 
+                                descrizione: "Seduto in Pec Deck rivolto verso lo schienale. Afferrare le maniglie e portare i gomiti indietro, contraendo le scapole. Lavorare in modo lento per isolare il deltoide posteriore." 
+                            },
+                             { 
+                                nome: "CURL PANCA SCOTT MONO", 
+                                serie: 2, 
+                                ripetizioni: "10+10", 
+                                immagine: placeholderImg('CURL SCOTT MONO'), 
+                                video: "https://gymvisual.com/img/vid/00000/03721201-dumbbell-preacher-curl-upper-arms-view.mp4", 
+                                descrizione: "Regolare l'altezza della panca in modo che i gomiti siano bloccati. Eseguire il curl senza spostare i gomiti, fino alla contrazione massima. Esecuzione unilaterale." 
+                            },
+                            { 
+                                nome: "CURL PANCA (Seduto)", 
+                                serie: 2, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('CURL PANCA'), 
+                                video: "https://gymvisual.com/img/vid/00000/02971201-dumbbell-concentration-curl-upper-arms-fix-view.mp4", 
+                                descrizione: "Curl con manubri da seduto. Mantenere il busto eretto e il movimento pulito, evitando l'oscillazione." 
+                            },
+                            { 
+                                nome: "PUSH DOWN CORDA LUNGA", 
+                                serie: 2, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('PUSH DOWN'), 
+                                video: "https://gymvisual.com/img/vid/00000/02001201-cable-pushdown-with-rope-attachment-upper-arms-f-view.mp4", 
+                                descrizione: "Gomiti stretti e bloccati vicino al corpo. Spingere la corda verso il basso e ruotare leggermente il polso alla fine per 'strizzare' il tricipite. Eccentrica lenta." 
+                            },
+                            { 
+                                nome: "FRENCH PRESS CORDA LUNGA", 
+                                serie: 2, 
+                                ripetizioni: "10", 
+                                immagine: placeholderImg('FRENCH PRESS'), 
+                                video: "https://gymvisual.com/img/vid/00000/01941201-cable-overhead-triceps-extension-rope-attachment-view.mp4", 
+                                descrizione: "Dare le spalle al macchinario. Estendere completamente i gomiti, muovendo solo gli avambracci. Tornare lentamente e controllare il peso." 
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // Variabile per tracciare la scheda corrente (necessaria per la navigazione Indietro)
+        let currentSchedaId = null; 
+        
+        // === 2. LOGICA DI NAVIGAZIONE E RENDERING ===
+
+        /**
+         * Naviga alla vista specificata
+         * @param {string} viewId - ID della vista da attivare (es. 'view-home', 'view-scheda')
+         */
+        function navigateTo(viewId) {
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            document.getElementById(viewId).classList.add('active');
+            window.scrollTo(0, 0); // Scorri in alto ad ogni cambio di vista
+        }
+
+        /**
+         * Popola e mostra la lista delle schede nella Home
+         */
+        function renderSchedeList() {
+            const listContainer = document.getElementById('schede-list');
+            listContainer.innerHTML = ''; 
+
+            // Poiché hai solo una scheda grande, la mostriamo come singola card cliccabile
+            schedeAllenamento.forEach(scheda => {
+                const item = document.createElement('div');
+                item.className = 'scheda-card p-4 bg-white rounded-xl shadow-md transition duration-300 hover:shadow-lg cursor-pointer border-l-4 border-primary';
+                item.innerHTML = `
+                    <h3 class="text-xl font-bold text-primary">${scheda.nome}</h3>
+                    <p class="text-sm text-gray-500 mt-1">${scheda.descrizione}</p>
+                    <span class="text-xs text-secondary font-medium block mt-2">Tocca per vedere i giorni di allenamento &rarr;</span>
+                `;
+                item.onclick = () => showSchedaDetail(scheda.id);
+                listContainer.appendChild(item);
+            });
+        }
+        
+        /**
+         * Mostra i dettagli di una scheda specifica
+         * @param {string} schedaId - ID della scheda da visualizzare
+         */
+        function showSchedaDetail(schedaId) {
+            currentSchedaId = schedaId;
+            const scheda = schedeAllenamento.find(s => s.id === schedaId);
+            if (!scheda) return;
+
+            // Aggiorna intestazione della scheda
+            document.getElementById('scheda-nome').textContent = scheda.nome;
+            document.getElementById('scheda-descrizione').textContent = scheda.descrizione;
+            
+            const blocchiContainer = document.getElementById('blocchi-container');
+            blocchiContainer.innerHTML = '';
+
+            // Renderizza i blocchi di allenamento (che ora sono i giorni)
+            scheda.blocchi.forEach(blocco => {
+                const bloccoDiv = document.createElement('div');
+                bloccoDiv.className = 'blocco-allenamento p-4 bg-white rounded-xl shadow-lg';
+                bloccoDiv.innerHTML = `<h4 class="text-2xl font-semibold mb-3 text-gray-700 border-b-2 border-gray-100 pb-1">${blocco.titolo}</h4>`;
+                
+                blocco.esercizi.forEach(esercizio => {
+                    // Crea il pulsante/elemento cliccabile per l'esercizio
+                    const esercizioDiv = document.createElement('div');
+                    esercizioDiv.className = 'esercizio-item p-3 mt-2 bg-background/50 rounded-lg flex justify-between items-center cursor-pointer transition duration-150 hover:bg-background/80';
+                    esercizioDiv.innerHTML = `
+                        <div>
+                            <p class="font-medium text-lg">${esercizio.nome}</p>
+                            <p class="text-sm text-gray-500">${esercizio.serie} Serie x ${esercizio.ripetizioni} Ripetizioni</p>
+                        </div>
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    `;
+                    // Passiamo l'esercizio e l'ID della scheda per la navigazione indietro
+                    esercizioDiv.onclick = () => showEsercizioDetail(esercizio, schedaId); 
+                    bloccoDiv.appendChild(esercizioDiv);
+                });
+                blocchiContainer.appendChild(bloccoDiv);
+            });
+
+            navigateTo('view-scheda');
+        }
+
+        /**
+         * Mostra i dettagli di un esercizio specifico
+         * @param {object} esercizio - Oggetto contenente i dati dell'esercizio
+         * @param {string} parentSchedaId - ID della scheda madre (usato per tornare indietro)
+         */
+        function showEsercizioDetail(esercizio, parentSchedaId) {
+            // Aggiorna l'interfaccia
+            document.getElementById('esercizio-nome').textContent = esercizio.nome;
+            document.getElementById('esercizio-serie').textContent = esercizio.serie;
+            document.getElementById('esercizio-ripetizioni').textContent = esercizio.ripetizioni;
+            document.getElementById('esercizio-descrizione').textContent = esercizio.descrizione;
+
+            // Gestione dei media (Video/Immagine/GIF) - LOGICA MODIFICATA
+            const mediaContainer = document.getElementById('media-container');
+            mediaContainer.innerHTML = '';
+            
+            const mediaUrl = esercizio.video;
+            // Usiamo una stringa vuota per evitare errori se mediaUrl è null
+            const mediaUrlLower = (mediaUrl || '').toLowerCase(); 
+
+            if (mediaUrlLower.endsWith('.mp4') || mediaUrlLower.endsWith('.webm')) {
+                // Caso 1: Video (MP4 o WebM)
+                // Aggiunto 'autoplay loop muted playsinline' per un'esperienza PWA fluida
+                mediaContainer.innerHTML = `
+                    <video 
+                        class="rounded-xl" 
+                        controls 
+                        autoplay 
+                        loop 
+                        muted 
+                        playsinline 
+                        poster="${esercizio.immagine || placeholderImg(esercizio.nome)}" 
+                        title="Video Esecuzione ${esercizio.nome}">
+                        <source src="${mediaUrl}" type="video/${mediaUrlLower.endsWith('.mp4') ? 'mp4' : 'webm'}">
+                        Il tuo browser non supporta il tag video.
+                    </video>
+                `;
+            } else if (mediaUrlLower.endsWith('.gif') || mediaUrlLower.endsWith('.jpg') || mediaUrlLower.endsWith('.jpeg') || mediaUrlLower.endsWith('.png')) {
+                // Caso 2: Immagine o GIF
+                mediaContainer.innerHTML = `
+                    <img 
+                        src="${mediaUrl}" 
+                        alt="${esercizio.nome}" 
+                        class="rounded-xl object-cover h-full" 
+                        onerror="this.onerror=null;this.src='${placeholderImg('Immagine Non Trovata')}';">
+                `;
+            } else {
+                // Caso 3: Fallback (URL non fornito, non valido o non supportato)
+                mediaContainer.innerHTML = `
+                    <img 
+                        src="${esercizio.immagine || placeholderImg(esercizio.nome)}" 
+                        alt="${esercizio.nome} - Istruzioni Visuali Non Disponibili" 
+                        class="rounded-xl object-cover h-full">
+                    <div class="p-4 text-center text-gray-500">Video di esecuzione non disponibile o non in formato supportato (mp4/webm/gif).</div>
+                `;
+            }
+
+            navigateTo('view-esercizio');
+        }
+
+        // === 3. FUNZIONI DI NAVIGAZIONE BASE ===
+        
+        function navigateHome() {
+            navigateTo('view-home');
+        }
+
+        function navigateBackToScheda() {
+            // Torna alla vista scheda che ha i dati già caricati
+             navigateTo('view-scheda');
+        }
+
+        // === 4. INIZIALIZZAZIONE DELL'APP ===
+
+        // Avvia l'app al caricamento completo del DOM
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSchedeList();
+        });
+    </script>
+</body>
+</html>
